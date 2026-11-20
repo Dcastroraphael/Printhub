@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar - PrintHub</title>
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="centro">
+    <div class="card">
+      <h1 class="logo">Print<span>Hub</span></h1>
+      <p class="subtitulo">Entre para reservar a impressora 3D</p>
+
+      <form id="form-login">
+        <label for="email">E-mail institucional</label>
+        <input type="email" id="email" required autofocus>
+
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" required>
+
+        <button type="submit" id="botao">Entrar</button>
+        <div id="mensagem" class="mensagem"></div>
+      </form>
+
+      <p class="rodape-card">Não tem conta? <a href="cadastro.html">Cadastre-se</a></p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const form = document.getElementById('form-login');
+    const botao = document.getElementById('botao');
+    const msg = document.getElementById('mensagem');
+
+    usuarioLogado().then(u => { if (u) location.href = 'index.html'; });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      botao.disabled = true;
+      msg.className = 'mensagem';
+
+      try {
+        await enviarJson('login.php', {
+          email_institucional: document.getElementById('email').value.trim(),
+          senha: document.getElementById('senha').value,
+        });
+        location.href = 'index.html';
+      } catch (erro) {
+        mostrarMensagem(msg, erro.message);
+        botao.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

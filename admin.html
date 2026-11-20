@@ -1,0 +1,1181 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administração - PrintHub</title>
+  <link rel="stylesheet" href="css/estilo.css">
+
+  <style>
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .admin-largo {
+      grid-column: 1 / -1;
+    }
+
+    .admin-acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .admin-acoes button {
+      width: auto;
+    }
+
+    .admin-campo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .admin-campo input,
+    .admin-campo select,
+    .admin-campo textarea {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .admin-lista {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .admin-item {
+      border: 1px solid var(--borda, #303643);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .admin-item-topo {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .admin-item small {
+      display: block;
+      color: var(--texto-suave);
+      margin-top: 5px;
+    }
+
+    .admin-estado {
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .admin-seletor {
+      width: 100%;
+      margin: 12px 0 18px;
+    }
+
+    .admin-vazio {
+      color: var(--texto-suave);
+      padding: 12px 0;
+    }
+
+    .admin-aviso {
+      color: var(--texto-suave);
+      font-size: 0.9rem;
+      margin: 12px 0;
+    }
+
+    .admin-oculto {
+      display: none !important;
+    }
+
+    .admin-item-topo > div {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .admin-usuarios-resumo {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+
+    .admin-resumo-item {
+      border: 1px solid var(--borda, #303643);
+      border-radius: 10px;
+      padding: 12px 18px;
+      min-width: 110px;
+    }
+
+    .admin-resumo-item strong {
+      display: block;
+      font-size: 1.5rem;
+    }
+
+    .admin-resumo-item small {
+      color: var(--texto-suave);
+    }
+
+    .admin-perigo {
+      color: #ff7777;
+    }
+
+    .admin-usuario-dados {
+      line-height: 1.6;
+    }
+
+    .admin-usuario-dados strong {
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 800px) {
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-largo {
+        grid-column: auto;
+      }
+
+      .admin-item-topo {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topo">
+    <h1 class="logo">
+      Print<span>Hub</span>
+      <small style="font-size:.9rem;color:var(--texto-suave)">
+        admin
+      </small>
+    </h1>
+
+    <div class="topo-direita">
+      <a class="botao botao-secundario btn-pequeno" href="index.html">
+        Postagens
+      </a>
+
+      <a class="botao botao-secundario btn-pequeno" href="reservas.html">
+        Reservas
+      </a>
+
+      <a class="botao botao-secundario btn-pequeno" href="conta.html">
+        Minha conta
+      </a>
+
+      <button class="botao-secundario btn-pequeno" id="sair">
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    <div class="admin-grid">
+
+      <!-- IMPRESSORAS -->
+      <section class="painel admin-largo">
+        <h2>Gerenciamento de impressoras</h2>
+
+        <p class="dica">
+          Cadastre e configure as impressoras disponíveis no laboratório.
+        </p>
+
+        <div id="lista-impressoras" class="admin-lista"></div>
+
+        <h3 id="titulo-form-impressora">
+          Cadastrar impressora
+        </h3>
+
+        <form id="form-impressora">
+          <input type="hidden" id="editar-id">
+
+          <div class="admin-campo">
+            <label for="imp-nome">Nome</label>
+            <input
+              id="imp-nome"
+              maxlength="100"
+              required
+              placeholder="Ex.: Impressora 3D Principal"
+            >
+          </div>
+
+          <div class="admin-campo">
+            <label for="imp-modelo">Modelo</label>
+            <input
+              id="imp-modelo"
+              maxlength="100"
+              required
+              placeholder="Ex.: Ender 3 V3"
+            >
+          </div>
+
+          <div class="admin-campo">
+            <label for="imp-localizacao">Localização</label>
+            <input
+              id="imp-localizacao"
+              maxlength="150"
+              required
+              placeholder="Ex.: Laboratório de Impressão 3D"
+            >
+          </div>
+
+          <div class="admin-campo">
+            <label for="imp-descricao">Descrição</label>
+            <textarea
+              id="imp-descricao"
+              rows="3"
+              maxlength="5000"
+            ></textarea>
+          </div>
+
+          <div class="admin-acoes">
+            <button type="submit" id="salvar-impressora">
+              Cadastrar impressora
+            </button>
+
+            <button
+              type="button"
+              id="cancelar-edicao"
+              class="botao-secundario admin-oculto"
+            >
+              Cancelar edição
+            </button>
+          </div>
+        </form>
+
+        <div id="msg-impressoras" class="mensagem"></div>
+      </section>
+
+      <!-- HORÁRIOS -->
+      <section class="painel">
+        <h2>Horários por impressora</h2>
+
+        <p class="dica">
+          Escolha a impressora e configure seus dias e horários.
+        </p>
+
+        <label for="selecionar-impressora">Impressora</label>
+
+        <select
+          id="selecionar-impressora"
+          class="admin-seletor"
+        ></select>
+
+        <div id="semana"></div>
+
+        <button id="salvar-semana" type="button">
+          Salvar horários
+        </button>
+
+        <p class="admin-aviso">
+          Alterar horários não cancela reservas existentes.
+        </p>
+
+        <div id="msg-semana" class="mensagem"></div>
+      </section>
+
+      <!-- BLOQUEIOS -->
+      <section class="painel">
+        <h2>Bloqueios individuais</h2>
+
+        <p class="dica">
+          Bloqueie uma impressora para manutenção ou indisponibilidade.
+        </p>
+
+        <form id="form-fechar">
+          <div class="admin-campo">
+            <label for="data">Data</label>
+            <input type="date" id="data" required>
+          </div>
+
+          <div class="admin-campo">
+            <label for="motivo">Motivo (opcional)</label>
+            <input
+              type="text"
+              id="motivo"
+              maxlength="100"
+              placeholder="Ex.: Manutenção preventiva"
+            >
+          </div>
+
+          <button type="submit">
+            Bloquear essa impressora
+          </button>
+        </form>
+
+        <h3>Bloqueios da impressora</h3>
+
+        <div id="lista-fechados" class="admin-lista"></div>
+        <div id="msg-fechados" class="mensagem"></div>
+      </section>
+
+      <!-- FECHAMENTOS GERAIS -->
+      <section class="painel admin-largo">
+        <h2>Fechamentos gerais da escola</h2>
+
+        <p class="dica">
+          Estas datas impedem reservas em todas as impressoras.
+        </p>
+
+        <div id="lista-gerais" class="admin-lista"></div>
+
+        <p class="admin-aviso">
+          O cadastro e a remoção de fechamentos gerais serão
+          integrados em uma próxima etapa.
+        </p>
+      </section>
+
+      <!-- GERENCIAMENTO DE USUÁRIOS -->
+      <section class="painel admin-largo" id="painel-usuarios">
+        <h2>Gerenciamento de usuários</h2>
+
+        <p class="dica">
+          Consulte os usuários cadastrados, pesquise contas e
+          exclua usuários quando necessário.
+        </p>
+
+        <div class="admin-usuarios-resumo">
+          <div class="admin-resumo-item">
+            <strong id="total-usuarios">0</strong>
+            <small>Usuários</small>
+          </div>
+
+          <div class="admin-resumo-item">
+            <strong id="total-alunos">0</strong>
+            <small>Alunos</small>
+          </div>
+
+          <div class="admin-resumo-item">
+            <strong id="total-admins">0</strong>
+            <small>Administradores</small>
+          </div>
+        </div>
+
+        <div class="admin-campo">
+          <label for="buscar-usuario">Pesquisar usuário</label>
+
+          <input
+            type="search"
+            id="buscar-usuario"
+            placeholder="Digite o nome ou e-mail..."
+            autocomplete="off"
+          >
+        </div>
+
+        <div class="admin-campo">
+          <label for="filtrar-papel">Filtrar por tipo de conta</label>
+
+          <select id="filtrar-papel">
+            <option value="todos">Todos os usuários</option>
+            <option value="aluno">Alunos</option>
+            <option value="admin">Administradores</option>
+          </select>
+        </div>
+
+        <div id="lista-usuarios" class="admin-lista"></div>
+
+        <div class="admin-acoes">
+          <button
+            type="button"
+            class="botao-secundario"
+            id="atualizar-usuarios"
+          >
+            Atualizar lista
+          </button>
+        </div>
+
+        <div id="msg-usuarios" class="mensagem"></div>
+
+        <p class="admin-aviso">
+          A exclusão de uma conta é permanente e também remove
+          seus registros relacionados no banco de dados.
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+
+  <script>
+    const NOMES = [
+      'Domingo',
+      'Segunda',
+      'Terça',
+      'Quarta',
+      'Quinta',
+      'Sexta',
+      'Sábado'
+    ];
+
+    const ORDEM = [1, 2, 3, 4, 5, 6, 0];
+
+    const $ = id => document.getElementById(id);
+
+    let impressoras = [];
+    let idSelecionado = null;
+    let usuarios = [];
+
+    function escapar(texto) {
+      const div = document.createElement('div');
+      div.textContent = String(texto ?? '');
+      return div.innerHTML;
+    }
+
+    function dataBr(iso) {
+      const [ano, mes, dia] = String(iso)
+        .slice(0, 10)
+        .split('-');
+
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function hojeTexto() {
+      const d = new Date();
+
+      return [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0')
+      ].join('-');
+    }
+
+    function mensagem(id, texto, tipo = '') {
+      mostrarMensagem($(id), texto, tipo);
+    }
+
+    function opcoesHora(selecionada) {
+      let html = '';
+
+      for (let h = 0; h <= 23; h++) {
+        const valor = String(h).padStart(2, '0') + ':00';
+
+        html += `
+          <option
+            value="${valor}"
+            ${valor === String(selecionada).slice(0, 5) ? 'selected' : ''}
+          >
+            ${valor}
+          </option>
+        `;
+      }
+
+      return html;
+    }
+
+    // HORÁRIOS SEMANAIS
+    function desenharSemana(semana) {
+      $('semana').innerHTML = ORDEM.map(dia => {
+        const s = semana.find(
+          x => Number(x.dia_semana) === dia
+        ) || {
+          aberto: false,
+          abre: '08:00',
+          fecha: '22:00'
+        };
+
+        const aberto = Boolean(Number(s.aberto));
+
+        return `
+          <div
+            class="linha-dia ${aberto ? '' : 'fechada'}"
+            data-dia="${dia}"
+          >
+            <span class="nome">${NOMES[dia]}</span>
+
+            <label class="marca">
+              <input
+                type="checkbox"
+                class="aberto"
+                ${aberto ? 'checked' : ''}
+              >
+              Aberto
+            </label>
+
+            <select class="abre" ${aberto ? '' : 'disabled'}>
+              ${opcoesHora(s.abre)}
+            </select>
+
+            <span class="ate">até</span>
+
+            <select class="fecha" ${aberto ? '' : 'disabled'}>
+              ${opcoesHora(s.fecha)}
+            </select>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // BLOQUEIOS INDIVIDUAIS
+    function desenharFechados(lista) {
+      $('lista-fechados').innerHTML = lista.length
+        ? lista.map(f => `
+            <div class="admin-item">
+              <div class="admin-item-topo">
+                <span>
+                  ${dataBr(f.data)}
+
+                  <small>
+                    ${escapar(f.motivo || 'Sem motivo informado')}
+                  </small>
+                </span>
+
+                <button
+                  type="button"
+                  class="apagar"
+                  data-data="${f.data}"
+                >
+                  Reabrir
+                </button>
+              </div>
+            </div>
+          `).join('')
+        : '<p class="admin-vazio">Nenhum bloqueio individual.</p>';
+    }
+
+    // FECHAMENTOS GERAIS
+    function desenharGerais(lista) {
+      $('lista-gerais').innerHTML = lista.length
+        ? lista.map(f => `
+            <div class="admin-item">
+              <strong>${dataBr(f.data)}</strong>
+
+              <small>
+                ${escapar(f.motivo || 'Sem motivo informado')}
+              </small>
+            </div>
+          `).join('')
+        : '<p class="admin-vazio">Nenhum fechamento geral cadastrado.</p>';
+    }
+
+    // FORMULÁRIO DE IMPRESSORAS
+    function limparFormularioImpressora() {
+      $('form-impressora').reset();
+      $('editar-id').value = '';
+
+      $('titulo-form-impressora').textContent =
+        'Cadastrar impressora';
+
+      $('salvar-impressora').textContent =
+        'Cadastrar impressora';
+
+      $('cancelar-edicao').classList.add('admin-oculto');
+    }
+
+    function desenharImpressoras() {
+      $('lista-impressoras').innerHTML = impressoras.length
+        ? impressoras.map(i => {
+            const ativa = Boolean(Number(i.ativa));
+
+            return `
+              <div class="admin-item">
+                <div class="admin-item-topo">
+                  <strong>${escapar(i.nome)}</strong>
+
+                  <span class="admin-estado">
+                    ${ativa ? 'Ativa' : 'Inativa'}
+                  </span>
+                </div>
+
+                <small>
+                  ${escapar(i.modelo)} ·
+                  ${escapar(i.localizacao)}
+                </small>
+
+                <div class="admin-acoes">
+                  <button
+                    type="button"
+                    class="botao-secundario btn-pequeno editar-imp"
+                    data-id="${i.id_impressora}"
+                  >
+                    Editar
+                  </button>
+
+                  ${ativa ? `
+                    <button
+                      type="button"
+                      class="botao-secundario btn-pequeno desativar-imp"
+                      data-id="${i.id_impressora}"
+                    >
+                      Desativar
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')
+        : '<p class="admin-vazio">Nenhuma impressora cadastrada.</p>';
+
+      const ativas = impressoras.filter(
+        i => Boolean(Number(i.ativa))
+      );
+
+      const anterior = idSelecionado;
+
+      $('selecionar-impressora').innerHTML = ativas.map(i => `
+        <option value="${i.id_impressora}">
+          ${escapar(i.nome)}
+        </option>
+      `).join('');
+
+      idSelecionado = ativas.some(
+        i => Number(i.id_impressora) === anterior
+      )
+        ? anterior
+        : (ativas.length
+            ? Number(ativas[0].id_impressora)
+            : null);
+
+      if (idSelecionado !== null) {
+        $('selecionar-impressora').value = String(idSelecionado);
+      }
+
+      $('salvar-semana').disabled = idSelecionado === null;
+
+      $('form-fechar')
+        .querySelector('button[type="submit"]')
+        .disabled = idSelecionado === null;
+    }
+
+    async function carregarImpressoras() {
+      impressoras = await chamarApi('impressoras.php');
+      desenharImpressoras();
+    }
+
+    async function carregarHorarios() {
+      if (idSelecionado === null) {
+        $('semana').innerHTML =
+          '<p class="admin-vazio">Nenhuma impressora ativa.</p>';
+
+        $('lista-fechados').innerHTML = '';
+        $('lista-gerais').innerHTML = '';
+
+        return;
+      }
+
+      const idConsultado = idSelecionado;
+
+      const dados = await chamarApi(
+        'horarios.php?id_impressora=' + idConsultado
+      );
+
+      if (idConsultado !== idSelecionado) {
+        return;
+      }
+
+      desenharSemana(dados.semana || []);
+      desenharFechados(dados.dias_fechados_impressora || []);
+      desenharGerais(dados.dias_fechados || []);
+    }
+
+    async function carregarTudo() {
+      try {
+        await carregarImpressoras();
+        await carregarHorarios();
+      } catch (erro) {
+        mensagem('msg-impressoras', erro.message);
+      }
+    }
+
+    // LISTAR USUÁRIOS
+    async function carregarUsuarios() {
+      const caixa = $('lista-usuarios');
+
+      caixa.innerHTML =
+        '<p class="admin-vazio">Carregando usuários...</p>';
+
+      try {
+        usuarios = await chamarApi('usuarios.php');
+        desenharUsuarios();
+
+      } catch (erro) {
+        caixa.innerHTML =
+          '<p class="admin-vazio">Não foi possível carregar os usuários.</p>';
+
+        mensagem('msg-usuarios', erro.message);
+      }
+    }
+
+    function desenharUsuarios() {
+      const termo = $('buscar-usuario')
+        .value.trim()
+        .toLocaleLowerCase('pt-BR');
+
+      const filtro = $('filtrar-papel').value;
+
+      const totalAdmins = usuarios.filter(
+        u => u.papel === 'admin'
+      ).length;
+
+      const totalAlunos = usuarios.filter(
+        u => u.papel === 'aluno'
+      ).length;
+
+      $('total-usuarios').textContent = usuarios.length;
+      $('total-alunos').textContent = totalAlunos;
+      $('total-admins').textContent = totalAdmins;
+
+      const filtrados = usuarios.filter(u => {
+        const nome = String(u.nome_usuario)
+          .toLocaleLowerCase('pt-BR');
+
+        const email = String(u.email_institucional)
+          .toLocaleLowerCase('pt-BR');
+
+        const combinaBusca =
+          nome.includes(termo) || email.includes(termo);
+
+        const combinaPapel =
+          filtro === 'todos' || u.papel === filtro;
+
+        return combinaBusca && combinaPapel;
+      });
+
+      if (!filtrados.length) {
+        $('lista-usuarios').innerHTML =
+          '<p class="admin-vazio">Nenhum usuário encontrado.</p>';
+
+        return;
+      }
+
+      $('lista-usuarios').innerHTML = filtrados.map(u => {
+        const ehAdmin = u.papel === 'admin';
+
+        const podeExcluir =
+          !u.sou_eu &&
+          !(ehAdmin && totalAdmins <= 1);
+
+        return `
+          <div class="admin-item">
+            <div class="admin-item-topo">
+              <div class="admin-usuario-dados">
+                <strong>
+                  ${escapar(u.nome_usuario)}
+                  ${u.sou_eu ? '(você)' : ''}
+                </strong>
+
+                <small>
+                  ${escapar(u.email_institucional)}
+                </small>
+              </div>
+
+              <span class="admin-estado">
+                ${ehAdmin ? 'Administrador' : 'Aluno'}
+              </span>
+            </div>
+
+            <small>
+              Cadastrado em ${dataBr(u.data_cadastro)}
+            </small>
+
+            <small>
+              ${u.total_postagens} postagem(ns) ·
+              ${u.reservas_futuras} reserva(s) futura(s)
+            </small>
+
+            <div class="admin-acoes">
+              ${podeExcluir ? `
+                <button
+                  type="button"
+                  class="apagar excluir-usuario"
+                  data-usuario="${u.id_usuario}"
+                >
+                  Excluir conta
+                </button>
+              ` : `
+                <small>
+                  ${u.sou_eu
+                    ? 'Gerencie sua própria conta em Minha conta.'
+                    : 'O último administrador não pode ser excluído.'}
+                </small>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // EDITAR OU DESATIVAR IMPRESSORA
+    $('lista-impressoras').addEventListener('click', async e => {
+      const editar = e.target.closest('.editar-imp');
+      const desativar = e.target.closest('.desativar-imp');
+
+      if (editar) {
+        const i = impressoras.find(
+          x => Number(x.id_impressora) === Number(editar.dataset.id)
+        );
+
+        if (!i) return;
+
+        $('editar-id').value = i.id_impressora;
+        $('imp-nome').value = i.nome;
+        $('imp-modelo').value = i.modelo;
+        $('imp-localizacao').value = i.localizacao;
+        $('imp-descricao').value = i.descricao || '';
+
+        $('titulo-form-impressora').textContent =
+          'Editar impressora';
+
+        $('salvar-impressora').textContent =
+          'Salvar alterações';
+
+        $('cancelar-edicao').classList.remove('admin-oculto');
+
+        $('form-impressora').scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+
+        return;
+      }
+
+      if (desativar) {
+        const id = Number(desativar.dataset.id);
+
+        const i = impressoras.find(
+          x => Number(x.id_impressora) === id
+        );
+
+        if (!i || !confirm(`Desativar ${i.nome}?`)) {
+          return;
+        }
+
+        try {
+          await chamarApi(
+            'impressoras.php?id=' + id,
+            { method: 'DELETE' }
+          );
+
+          await carregarTudo();
+
+          mensagem(
+            'msg-impressoras',
+            'Impressora desativada.',
+            'ok'
+          );
+
+        } catch (erro) {
+          mensagem('msg-impressoras', erro.message);
+        }
+      }
+    });
+
+    $('cancelar-edicao').addEventListener(
+      'click',
+      limparFormularioImpressora
+    );
+
+    $('form-impressora').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const id = $('editar-id').value;
+
+      const dados = {
+        nome: $('imp-nome').value.trim(),
+        modelo: $('imp-modelo').value.trim(),
+        localizacao: $('imp-localizacao').value.trim(),
+        descricao: $('imp-descricao').value.trim()
+      };
+
+      if (id) {
+        dados.id_impressora = Number(id);
+      }
+
+      try {
+        await enviarJson(
+          'impressoras.php',
+          dados,
+          id ? 'PUT' : 'POST'
+        );
+
+        limparFormularioImpressora();
+        await carregarTudo();
+
+        mensagem(
+          'msg-impressoras',
+          id ? 'Impressora atualizada!' : 'Impressora cadastrada!',
+          'ok'
+        );
+
+      } catch (erro) {
+        mensagem('msg-impressoras', erro.message);
+      }
+    });
+
+    // TROCAR IMPRESSORA SELECIONADA
+    $('selecionar-impressora').addEventListener(
+      'change',
+      async e => {
+        idSelecionado = Number(e.target.value) || null;
+
+        $('msg-semana').textContent = '';
+        $('msg-fechados').textContent = '';
+
+        try {
+          await carregarHorarios();
+        } catch (erro) {
+          mensagem('msg-semana', erro.message);
+        }
+      }
+    );
+
+    // ABRIR OU FECHAR DIA DA SEMANA
+    $('semana').addEventListener('change', e => {
+      if (!e.target.classList.contains('aberto')) {
+        return;
+      }
+
+      const linha = e.target.closest('.linha-dia');
+      const aberto = e.target.checked;
+
+      linha.classList.toggle('fechada', !aberto);
+      linha.querySelector('.abre').disabled = !aberto;
+      linha.querySelector('.fecha').disabled = !aberto;
+    });
+
+    // SALVAR HORÁRIOS
+    $('salvar-semana').addEventListener('click', async () => {
+      if (idSelecionado === null) {
+        return;
+      }
+
+      const id = idSelecionado;
+
+      const semana = [
+        ...document.querySelectorAll('#semana .linha-dia')
+      ].map(linha => ({
+        dia_semana: Number(linha.dataset.dia),
+        aberto: linha.querySelector('.aberto').checked,
+        abre: linha.querySelector('.abre').value,
+        fecha: linha.querySelector('.fecha').value
+      }));
+
+      const errado = semana.find(
+        s => s.aberto && s.abre >= s.fecha
+      );
+
+      if (errado) {
+        mensagem(
+          'msg-semana',
+          NOMES[errado.dia_semana] + ': horário inválido.'
+        );
+
+        return;
+      }
+
+      if (!confirm(
+        'Salvar os horários? Reservas existentes não serão canceladas automaticamente.'
+      )) {
+        return;
+      }
+
+      try {
+        await enviarJson(
+          'horarios.php?id_impressora=' + id,
+          {
+            id_impressora: id,
+            semana
+          },
+          'PUT'
+        );
+
+        await carregarHorarios();
+
+        mensagem('msg-semana', 'Horários salvos!', 'ok');
+
+      } catch (erro) {
+        mensagem('msg-semana', erro.message);
+      }
+    });
+
+    // CRIAR BLOQUEIO INDIVIDUAL
+    $('form-fechar').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      if (idSelecionado === null) {
+        return;
+      }
+
+      const id = idSelecionado;
+
+      try {
+        const resultado = await enviarJson(
+          'horarios.php?id_impressora=' + id,
+          {
+            id_impressora: id,
+            data: $('data').value,
+            motivo: $('motivo').value.trim()
+          },
+          'POST'
+        );
+
+        let texto = 'Impressora bloqueada nessa data.';
+
+        if (resultado.reservas_ja_feitas_nesse_dia > 0) {
+          texto +=
+            ` Atenção: existem ${resultado.reservas_ja_feitas_nesse_dia}` +
+            ' reserva(s) nessa data que não foram canceladas.';
+        }
+
+        e.target.reset();
+        await carregarHorarios();
+
+        mensagem('msg-fechados', texto, 'ok');
+
+      } catch (erro) {
+        mensagem('msg-fechados', erro.message);
+      }
+    });
+
+    // REMOVER BLOQUEIO INDIVIDUAL
+    $('lista-fechados').addEventListener('click', async e => {
+      const botao = e.target.closest('.apagar');
+
+      if (!botao || idSelecionado === null) {
+        return;
+      }
+
+      const id = idSelecionado;
+      const data = botao.dataset.data;
+
+      if (!confirm(
+        'Remover o bloqueio de ' + dataBr(data) + '?'
+      )) {
+        return;
+      }
+
+      try {
+        await chamarApi(
+          'horarios.php?id_impressora=' + id +
+          '&data=' + encodeURIComponent(data),
+          { method: 'DELETE' }
+        );
+
+        await carregarHorarios();
+
+        mensagem(
+          'msg-fechados',
+          'Bloqueio removido.',
+          'ok'
+        );
+
+      } catch (erro) {
+        mensagem('msg-fechados', erro.message);
+      }
+    });
+
+    // PESQUISAR USUÁRIOS
+    $('buscar-usuario').addEventListener(
+      'input',
+      desenharUsuarios
+    );
+
+    $('filtrar-papel').addEventListener(
+      'change',
+      desenharUsuarios
+    );
+
+    $('atualizar-usuarios').addEventListener(
+      'click',
+      carregarUsuarios
+    );
+
+    // EXCLUIR USUÁRIO
+    $('lista-usuarios').addEventListener('click', async e => {
+      const botao = e.target.closest('.excluir-usuario');
+
+      if (!botao) {
+        return;
+      }
+
+      const id = Number(botao.dataset.usuario);
+
+      const usuario = usuarios.find(
+        u => Number(u.id_usuario) === id
+      );
+
+      if (!usuario) {
+        return;
+      }
+
+      const aviso =
+        `Deseja excluir a conta de "${usuario.nome_usuario}"?\n\n` +
+        `E-mail: ${usuario.email_institucional}\n\n` +
+        'As postagens, reservas e outros registros relacionados ' +
+        'serão excluídos permanentemente.';
+
+      if (!confirm(aviso)) {
+        return;
+      }
+
+      const confirmacao = prompt(
+        `Digite EXCLUIR para confirmar a exclusão de "${usuario.nome_usuario}":`
+      );
+
+      if (confirmacao !== 'EXCLUIR') {
+        mensagem('msg-usuarios', 'Exclusão cancelada.');
+        return;
+      }
+
+      botao.disabled = true;
+
+      try {
+        await chamarApi(
+          'usuarios.php?id=' + encodeURIComponent(id),
+          { method: 'DELETE' }
+        );
+
+        await carregarUsuarios();
+
+        mensagem(
+          'msg-usuarios',
+          'Conta excluída com sucesso!',
+          'ok'
+        );
+
+      } catch (erro) {
+        mensagem('msg-usuarios', erro.message);
+        botao.disabled = false;
+      }
+    });
+
+    // SAIR
+    $('sair').addEventListener('click', async () => {
+      await chamarApi('logout.php');
+      location.href = 'login.html';
+    });
+
+    // INICIALIZAÇÃO
+    usuarioLogado().then(async usuario => {
+      if (!usuario) {
+        location.href = 'login.html';
+        return;
+      }
+
+      if (!usuario.admin) {
+        location.href = 'index.html';
+        return;
+      }
+
+      $('data').min = hojeTexto();
+
+      await Promise.all([
+        carregarTudo(),
+        carregarUsuarios()
+      ]);
+
+    }).catch(erro => {
+      mensagem('msg-impressoras', erro.message);
+    });
+  </script>
+</body>
+</html>

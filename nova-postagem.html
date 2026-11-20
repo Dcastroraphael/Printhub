@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nova postagem - PrintHub</title>
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <h1 class="logo">Print<span>Hub</span></h1>
+    <div class="topo-direita">
+      <a class="botao botao-secundario btn-pequeno" href="index.html">← Voltar</a>
+    </div>
+  </header>
+
+  <div class="conteudo">
+    <div class="card card-largo" style="margin: 0 auto;">
+      <h2 style="margin-top:0;">Nova postagem</h2>
+
+      <form id="form-post">
+        <label for="titulo">Título</label>
+        <input type="text" id="titulo" name="titulo" maxlength="100" required>
+
+        <label for="texto">Descrição</label>
+        <textarea id="texto" name="texto" required></textarea>
+
+        <label for="tags">Tags (separadas por vírgula)</label>
+        <input type="text" id="tags" name="tags" maxlength="255" placeholder="suporte, pla, utilidade">
+
+        <label for="imagem">Imagem de capa (até 5 MB)</label>
+        <input type="file" id="imagem" name="imagem" accept="image/*" required>
+        <img id="previa" class="previa" alt="">
+
+        <label for="arquivo1">Arquivo 1 (opcional)</label>
+        <input type="file" id="arquivo1" name="arquivo1">
+        <label for="arquivo2">Arquivo 2 (opcional)</label>
+        <input type="file" id="arquivo2" name="arquivo2">
+        <label for="arquivo3">Arquivo 3 (opcional)</label>
+        <input type="file" id="arquivo3" name="arquivo3">
+        <p class="dica">Aceitos: stl, 3mf, obj, gcode, pdf e zip (até 20 MB cada).</p>
+
+        <button type="submit" id="botao">Publicar</button>
+        <div id="mensagem" class="mensagem"></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const form = document.getElementById('form-post');
+    const botao = document.getElementById('botao');
+    const msg = document.getElementById('mensagem');
+    const previa = document.getElementById('previa');
+
+    usuarioLogado().then(u => { if (!u) location.href = 'login.html'; });
+
+    document.getElementById('imagem').addEventListener('change', (e) => {
+      const arquivo = e.target.files[0];
+      if (!arquivo) { previa.style.display = 'none'; return; }
+      previa.src = URL.createObjectURL(arquivo);
+      previa.style.display = 'block';
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      botao.disabled = true;
+      botao.textContent = 'Publicando...';
+      msg.className = 'mensagem';
+
+      try {
+        await chamarApi('postagens.php', { method: 'POST', body: new FormData(form) });
+        location.href = 'index.html';
+      } catch (erro) {
+        mostrarMensagem(msg, erro.message);
+        botao.disabled = false;
+        botao.textContent = 'Publicar';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,606 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minha conta - PrintHub</title>
+  <link rel="stylesheet" href="css/estilo.css">
+
+  <style>
+    .zona-perigo {
+      border: 1px solid #a83a3a;
+    }
+
+    .zona-perigo h2 {
+      color: #ff6868;
+    }
+
+    .zona-perigo .aviso {
+      color: var(--texto-suave);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .botao-excluir {
+      background: #b42323;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 18px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .botao-excluir:hover {
+      background: #d12e2e;
+    }
+
+    .botao-excluir:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .confirmacao-exclusao {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #a83a3a;
+      border-radius: 10px;
+    }
+
+    .confirmacao-exclusao label {
+      display: block;
+      margin-top: 12px;
+    }
+
+    .acoes-exclusao {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .acoes-exclusao button {
+      margin-top: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topo">
+    <h1 class="logo">Print<span>Hub</span></h1>
+
+    <div class="topo-direita">
+      <a
+        class="botao botao-secundario btn-pequeno"
+        id="link-admin"
+        href="admin.html"
+        style="display:none;"
+      >
+        Administração
+      </a>
+
+      <a class="botao botao-secundario btn-pequeno" href="index.html">
+        Postagens
+      </a>
+
+      <a class="botao botao-secundario btn-pequeno" href="reservas.html">
+        Reservas
+      </a>
+
+      <button class="botao-secundario btn-pequeno" id="sair">
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    <div class="conta-layout">
+
+      <section class="painel largura-total">
+        <h2>Minha conta</h2>
+
+        <p class="dado">
+          <small>E-mail institucional</small>
+          <span id="email"></span>
+        </p>
+
+        <p class="dado">
+          <small>Membro desde</small>
+          <span id="desde"></span>
+        </p>
+
+        <div class="numeros" style="margin-top:16px;">
+          <div class="numero">
+            <strong id="n-posts">0</strong>
+            <span>postagens</span>
+          </div>
+
+          <div class="numero">
+            <strong id="n-favs">0</strong>
+            <span>favoritos recebidos</span>
+          </div>
+
+          <div class="numero">
+            <strong id="n-reservas">0</strong>
+            <span>reservas futuras</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="painel">
+        <h2>Nome de usuário</h2>
+
+        <form id="form-nome">
+          <label for="nome">Nome de usuário</label>
+          <input type="text" id="nome" maxlength="50" required>
+
+          <button type="submit">Salvar nome</button>
+          <div id="msg-nome" class="mensagem"></div>
+        </form>
+      </section>
+
+      <section class="painel">
+        <h2>Trocar senha</h2>
+
+        <form id="form-senha">
+          <label for="senha-atual">Senha atual</label>
+          <input type="password" id="senha-atual" required>
+
+          <label for="senha-nova">Nova senha (mínimo 6 caracteres)</label>
+          <input
+            type="password"
+            id="senha-nova"
+            minlength="6"
+            required
+          >
+
+          <label for="senha-confirma">Repita a nova senha</label>
+          <input
+            type="password"
+            id="senha-confirma"
+            minlength="6"
+            required
+          >
+
+          <button type="submit">Trocar senha</button>
+          <div id="msg-senha" class="mensagem"></div>
+        </form>
+      </section>
+
+      <section class="painel">
+        <h2>Minhas reservas</h2>
+        <div id="lista-reservas"></div>
+        <div id="msg-reservas" class="mensagem"></div>
+      </section>
+
+      <section class="painel">
+        <h2>Minhas postagens</h2>
+        <div id="lista-postagens"></div>
+        <div id="msg-postagens" class="mensagem"></div>
+      </section>
+
+      <section class="painel largura-total zona-perigo">
+        <h2>Excluir minha conta</h2>
+
+        <p class="aviso">
+          A exclusão da conta é permanente e não pode ser desfeita.
+          Suas postagens, favoritos e reservas também serão excluídos.
+        </p>
+
+        <button
+          type="button"
+          class="botao-excluir"
+          id="abrir-exclusao"
+        >
+          Excluir minha conta
+        </button>
+
+        <div
+          id="confirmacao-exclusao"
+          class="confirmacao-exclusao"
+          style="display:none;"
+        >
+          <p class="aviso">
+            Para confirmar a exclusão, informe sua senha atual e
+            digite <strong>EXCLUIR</strong> no campo de confirmação.
+          </p>
+
+          <form id="form-excluir">
+            <label for="senha-exclusao">Senha atual</label>
+            <input
+              type="password"
+              id="senha-exclusao"
+              autocomplete="current-password"
+              required
+            >
+
+            <label for="texto-exclusao">
+              Digite EXCLUIR para confirmar
+            </label>
+
+            <input
+              type="text"
+              id="texto-exclusao"
+              placeholder="EXCLUIR"
+              autocomplete="off"
+              required
+            >
+
+            <div class="acoes-exclusao">
+              <button
+                type="submit"
+                class="botao-excluir"
+                id="confirmar-exclusao"
+              >
+                Excluir definitivamente
+              </button>
+
+              <button
+                type="button"
+                class="botao botao-secundario"
+                id="cancelar-exclusao"
+              >
+                Voltar
+              </button>
+            </div>
+
+            <div id="msg-exclusao" class="mensagem"></div>
+          </form>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+
+  <script>
+    function escapar(texto) {
+      const div = document.createElement('div');
+      div.textContent = texto ?? '';
+      return div.innerHTML;
+    }
+
+    function dataBr(iso) {
+      const p = String(iso).slice(0, 10).split('-');
+
+      if (p.length !== 3) {
+        return iso;
+      }
+
+      return p[2] + '/' + p[1] + '/' + p[0];
+    }
+
+    async function carregarConta(soNumeros = false) {
+      const c = await chamarApi('conta.php');
+
+      document.getElementById('n-posts').textContent =
+        c.total_postagens;
+
+      document.getElementById('n-favs').textContent =
+        c.favoritos_recebidos;
+
+      document.getElementById('n-reservas').textContent =
+        c.reservas_futuras;
+
+      if (soNumeros) {
+        return;
+      }
+
+      document.getElementById('email').textContent =
+        c.email_institucional;
+
+      document.getElementById('desde').textContent =
+        dataBr(c.data_cadastro);
+
+      document.getElementById('nome').value =
+        c.nome_usuario;
+    }
+
+    async function carregarReservas() {
+      const caixa = document.getElementById('lista-reservas');
+
+      try {
+        const lista = (await chamarApi('reservas.php'))
+          .filter(r => r.minha);
+
+        caixa.innerHTML = lista.length
+          ? lista.map(r => `
+              <div class="item-lista">
+                <span>
+                  ${dataBr(r.data_reserva)} ·
+                  ${r.horario_inicio.slice(0, 5)}
+                  às ${r.horario_fim.slice(0, 5)}
+
+                  <small>
+                    ${escapar(r.nome_impressora || 'Impressora')}
+                    ·
+                    ${r.tipo_reserva === 'em_grupo'
+                      ? 'Em grupo'
+                      : 'Individual'}
+                  </small>
+                </span>
+
+                <button
+                  type="button"
+                  class="apagar"
+                  data-reserva="${r.id_reserva}"
+                >
+                  Cancelar
+                </button>
+              </div>
+            `).join('')
+          : '<p class="dica">Você não tem reservas futuras.</p>';
+
+      } catch (erro) {
+        caixa.innerHTML =
+          '<p class="dica">' + escapar(erro.message) + '</p>';
+      }
+    }
+
+    async function carregarPostagens() {
+      const caixa = document.getElementById('lista-postagens');
+
+      try {
+        const lista = await chamarApi('postagens.php?minhas=1');
+
+        caixa.innerHTML = lista.length
+          ? lista.map(p => `
+              <div class="item-lista">
+                <span>
+                  ${escapar(p.titulo)}
+
+                  <small>
+                    ${dataBr(p.data_publicacao)}
+                    · ★ ${p.total_favoritos}
+                  </small>
+                </span>
+
+                <button
+                  type="button"
+                  class="apagar"
+                  data-postagem="${p.id_postagem}"
+                >
+                  Apagar
+                </button>
+              </div>
+            `).join('')
+          : '<p class="dica">Você ainda não publicou nada.</p>';
+
+      } catch (erro) {
+        caixa.innerHTML =
+          '<p class="dica">' + escapar(erro.message) + '</p>';
+      }
+    }
+
+    // ALTERAR NOME DE USUÁRIO
+    document.getElementById('form-nome').addEventListener(
+      'submit',
+      async e => {
+        e.preventDefault();
+
+        const msg = document.getElementById('msg-nome');
+        msg.className = 'mensagem';
+
+        try {
+          await enviarJson(
+            'conta.php',
+            {
+              nome_usuario: document.getElementById('nome').value.trim()
+            },
+            'PUT'
+          );
+
+          mostrarMensagem(msg, 'Nome atualizado!', 'ok');
+
+        } catch (erro) {
+          mostrarMensagem(msg, erro.message);
+        }
+      }
+    );
+
+    // TROCAR SENHA
+    document.getElementById('form-senha').addEventListener(
+      'submit',
+      async e => {
+        e.preventDefault();
+
+        const msg = document.getElementById('msg-senha');
+        msg.className = 'mensagem';
+
+        const atual = document.getElementById('senha-atual').value;
+        const nova = document.getElementById('senha-nova').value;
+        const confirma = document.getElementById('senha-confirma').value;
+
+        if (nova !== confirma) {
+          mostrarMensagem(msg, 'As senhas novas não são iguais');
+          return;
+        }
+
+        try {
+          await enviarJson(
+            'senha.php',
+            {
+              senha_atual: atual,
+              senha_nova: nova
+            }
+          );
+
+          mostrarMensagem(msg, 'Senha trocada!', 'ok');
+          e.target.reset();
+
+        } catch (erro) {
+          mostrarMensagem(msg, erro.message);
+        }
+      }
+    );
+
+    // CANCELAR RESERVA OU APAGAR POSTAGEM
+    document.addEventListener('click', async e => {
+      const cancelar = e.target.closest('[data-reserva]');
+
+      if (cancelar) {
+        if (!confirm('Cancelar esta reserva?')) {
+          return;
+        }
+
+        const msg = document.getElementById('msg-reservas');
+
+        try {
+          await chamarApi(
+            'reservas.php?id=' + cancelar.dataset.reserva,
+            { method: 'DELETE' }
+          );
+
+          await carregarReservas();
+          await carregarConta(true);
+
+          mostrarMensagem(msg, 'Reserva cancelada!', 'ok');
+
+        } catch (erro) {
+          mostrarMensagem(msg, erro.message);
+        }
+
+        return;
+      }
+
+      const apagar = e.target.closest('[data-postagem]');
+
+      if (apagar) {
+        if (!confirm('Apagar esta postagem?')) {
+          return;
+        }
+
+        const msg = document.getElementById('msg-postagens');
+
+        try {
+          await chamarApi(
+            'postagens.php?id=' + apagar.dataset.postagem,
+            { method: 'DELETE' }
+          );
+
+          await carregarPostagens();
+          await carregarConta(true);
+
+          mostrarMensagem(msg, 'Postagem excluída!', 'ok');
+
+        } catch (erro) {
+          mostrarMensagem(msg, erro.message);
+        }
+      }
+    });
+
+    // ABRIR CONFIRMAÇÃO DE EXCLUSÃO
+    const abrirExclusao = document.getElementById('abrir-exclusao');
+    const cancelarExclusao = document.getElementById('cancelar-exclusao');
+    const confirmacaoExclusao = document.getElementById('confirmacao-exclusao');
+
+    abrirExclusao.addEventListener('click', () => {
+      abrirExclusao.style.display = 'none';
+      confirmacaoExclusao.style.display = 'block';
+      document.getElementById('senha-exclusao').focus();
+    });
+
+    // CANCELAR EXCLUSÃO
+    cancelarExclusao.addEventListener('click', () => {
+      confirmacaoExclusao.style.display = 'none';
+      abrirExclusao.style.display = '';
+
+      document.getElementById('form-excluir').reset();
+
+      const msg = document.getElementById('msg-exclusao');
+      msg.textContent = '';
+      msg.className = 'mensagem';
+    });
+
+    // EXCLUIR A PRÓPRIA CONTA
+    document.getElementById('form-excluir').addEventListener(
+      'submit',
+      async e => {
+        e.preventDefault();
+
+        const msg = document.getElementById('msg-exclusao');
+        const botao = document.getElementById('confirmar-exclusao');
+
+        const senha = document.getElementById('senha-exclusao').value;
+        const confirmacao = document.getElementById('texto-exclusao')
+          .value.trim();
+
+        msg.className = 'mensagem';
+
+        if (confirmacao !== 'EXCLUIR') {
+          mostrarMensagem(
+            msg,
+            'Digite exatamente EXCLUIR para confirmar.'
+          );
+          return;
+        }
+
+        if (!senha) {
+          mostrarMensagem(msg, 'Informe sua senha atual.');
+          return;
+        }
+
+        const confirmou = confirm(
+          'ATENÇÃO!\n\n' +
+          'Sua conta, postagens e reservas serão excluídas ' +
+          'permanentemente.\n\n' +
+          'Deseja realmente continuar?'
+        );
+
+        if (!confirmou) {
+          return;
+        }
+
+        botao.disabled = true;
+        cancelarExclusao.disabled = true;
+
+        try {
+          await chamarApi('conta.php', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ senha })
+          });
+
+          alert('Sua conta foi excluída com sucesso.');
+
+          location.replace('login.html');
+
+        } catch (erro) {
+          mostrarMensagem(msg, erro.message);
+
+          botao.disabled = false;
+          cancelarExclusao.disabled = false;
+        }
+      }
+    );
+
+    // SAIR
+    document.getElementById('sair').addEventListener('click', async () => {
+      await chamarApi('logout.php');
+      location.href = 'login.html';
+    });
+
+    // INICIALIZAÇÃO
+    usuarioLogado().then(u => {
+      if (!u) {
+        location.href = 'login.html';
+        return;
+      }
+
+      if (u.admin) {
+        document.getElementById('link-admin').style.display = '';
+      }
+
+      carregarConta().catch(console.error);
+      carregarReservas();
+      carregarPostagens();
+    });
+  </script>
+</body>
+</html>

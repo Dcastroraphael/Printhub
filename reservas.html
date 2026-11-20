@@ -1,0 +1,759 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reservas - PrintHub</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <style>
+    .seletor-impressora {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .detalhes-impressora {
+      padding: 12px;
+      margin: 10px 0 20px;
+      border: 1px solid var(--borda, #303643);
+      border-radius: 10px;
+    }
+
+    .detalhes-impressora strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .detalhes-impressora small {
+      display: block;
+      color: var(--texto-suave);
+      margin-top: 4px;
+    }
+
+    .reserva-info {
+      color: var(--texto-suave);
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+    }
+
+    .reserva-aviso {
+      margin: 12px 0;
+      color: var(--texto-suave);
+      font-size: 0.85rem;
+    }
+
+    .horario.indisponivel {
+      opacity: 0.65;
+    }
+
+    .horario.escolhido {
+      outline: 1px solid #ff7a18;
+    }
+
+    .horario.livre {
+      cursor: pointer;
+    }
+
+    .horario.livre:hover {
+      border-color: #ff7a18;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topo">
+    <h1 class="logo">Print<span>Hub</span></h1>
+
+    <div class="topo-direita">
+      <a
+        href="conta.html"
+        id="ola"
+        style="color: var(--texto-suave); font-size: 0.9rem; text-decoration: none;"
+      ></a>
+
+      <a
+        class="botao botao-secundario btn-pequeno"
+        id="link-admin"
+        href="admin.html"
+        style="display:none;"
+      >
+        Administração
+      </a>
+
+      <a
+        class="botao botao-secundario btn-pequeno"
+        href="index.html"
+      >
+        ← Postagens
+      </a>
+
+      <button class="botao-secundario btn-pequeno" id="sair">
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    <div class="reservas-layout">
+
+      <section class="painel">
+        <h2>Horários do dia</h2>
+
+        <p class="dica">
+          Selecione uma impressora e uma data para consultar a disponibilidade.
+        </p>
+
+        <label for="impressora">Impressora 3D</label>
+        <select id="impressora" class="seletor-impressora">
+          <option value="">Carregando impressoras...</option>
+        </select>
+
+        <div id="detalhes-impressora" class="detalhes-impressora" style="display:none;"></div>
+
+        <label for="data">Data</label>
+        <input type="date" id="data">
+
+        <p class="dica" id="funcionamento"></p>
+
+        <div id="linhas"></div>
+      </section>
+
+      <section class="painel">
+        <h2>Nova reserva</h2>
+
+        <p class="dica">
+          Escolha um horário disponível. As reservas podem durar de 2 a 4 horas.
+        </p>
+
+        <p class="reserva-info" id="resumo-impressora">
+          Selecione uma impressora.
+        </p>
+
+        <form id="form-reserva">
+
+          <label for="duracao">Duração</label>
+          <select id="duracao">
+            <option value="2">2 horas</option>
+            <option value="3">3 horas</option>
+            <option value="4">4 horas</option>
+          </select>
+
+          <label for="inicio">Horário de início</label>
+          <select id="inicio"></select>
+
+          <label for="tipo">Tipo</label>
+          <select id="tipo">
+            <option value="individual">Individual</option>
+            <option value="em_grupo">Em grupo</option>
+          </select>
+
+          <div id="bloco-participantes" style="display:none;">
+            <label for="participantes">
+              Participantes (nomes de usuário separados por vírgula)
+            </label>
+
+            <input
+              type="text"
+              id="participantes"
+              placeholder="rodrigo_m, livia_nogueira"
+            >
+          </div>
+
+          <p class="reserva-aviso">
+            O horário selecionado será reservado apenas na impressora escolhida.
+          </p>
+
+          <button type="submit" id="botao" disabled>
+            Reservar
+          </button>
+
+          <div id="mensagem" class="mensagem"></div>
+        </form>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+
+  <script>
+    const campoImpressora = document.getElementById('impressora');
+    const campoData = document.getElementById('data');
+    const linhas = document.getElementById('linhas');
+    const selInicio = document.getElementById('inicio');
+    const selDuracao = document.getElementById('duracao');
+    const selTipo = document.getElementById('tipo');
+    const form = document.getElementById('form-reserva');
+    const botao = document.getElementById('botao');
+    const msg = document.getElementById('mensagem');
+    const textoFuncionamento = document.getElementById('funcionamento');
+    const detalhesImpressora = document.getElementById('detalhes-impressora');
+    const resumoImpressora = document.getElementById('resumo-impressora');
+
+    let impressoras = [];
+    let reservasDoDia = [];
+    let horario = {
+      aberto: false,
+      abre: null,
+      fecha: null,
+      motivo: ''
+    };
+
+    let carregando = false;
+    let enviando = false;
+    let versaoConsulta = 0;
+
+    function escapar(texto) {
+      const div = document.createElement('div');
+      div.textContent = String(texto ?? '');
+      return div.innerHTML;
+    }
+
+    function hojeTexto() {
+      const d = new Date();
+
+      return [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0')
+      ].join('-');
+    }
+
+    function minutos(hhmm) {
+      const partes = String(hhmm).split(':');
+
+      return Number(partes[0]) * 60 + Number(partes[1]);
+    }
+
+    function rotuloMinutos(total) {
+      const horas = Math.floor(total / 60);
+      const mins = total % 60;
+
+      return String(horas).padStart(2, '0') + ':' +
+        String(mins).padStart(2, '0');
+    }
+
+    function idImpressora() {
+      const id = Number(campoImpressora.value);
+
+      return Number.isInteger(id) && id > 0 ? id : null;
+    }
+
+    function impressoraAtual() {
+      const id = idImpressora();
+
+      return impressoras.find(i =>
+        Number(i.id_impressora) === id
+      ) || null;
+    }
+
+    function atualizarBotao() {
+      botao.disabled =
+        carregando ||
+        enviando ||
+        !idImpressora() ||
+        !horario.aberto ||
+        selInicio.options.length === 0;
+    }
+
+    function limparMensagem() {
+      msg.textContent = '';
+      msg.className = 'mensagem';
+    }
+
+    function mostrarImpressora() {
+      const impressora = impressoraAtual();
+
+      if (!impressora) {
+        detalhesImpressora.style.display = 'none';
+        resumoImpressora.textContent = 'Selecione uma impressora.';
+        return;
+      }
+
+      detalhesImpressora.style.display = '';
+
+      detalhesImpressora.innerHTML = `
+        <strong>${escapar(impressora.nome)}</strong>
+        <small>Modelo: ${escapar(impressora.modelo)}</small>
+        <small>Localização: ${escapar(impressora.localizacao)}</small>
+        ${impressora.descricao
+          ? `<small>${escapar(impressora.descricao)}</small>`
+          : ''
+        }
+      `;
+
+      resumoImpressora.textContent =
+        'Impressora selecionada: ' + impressora.nome;
+    }
+
+    async function carregarImpressoras() {
+      const lista = await chamarApi('impressoras.php');
+
+      impressoras = lista.filter(i => Boolean(Number(i.ativa)));
+
+      campoImpressora.innerHTML = '';
+
+      if (!impressoras.length) {
+        campoImpressora.innerHTML =
+          '<option value="">Nenhuma impressora disponível</option>';
+
+        mostrarImpressora();
+        atualizarBotao();
+        return;
+      }
+
+      impressoras.forEach(i => {
+        const opcao = document.createElement('option');
+
+        opcao.value = i.id_impressora;
+        opcao.textContent = i.nome;
+
+        campoImpressora.appendChild(opcao);
+      });
+
+      mostrarImpressora();
+    }
+
+    function horarioOcupado(inicio, fim) {
+      return reservasDoDia.some(r => {
+        const inicioReserva = minutos(r.horario_inicio);
+        const fimReserva = minutos(r.horario_fim);
+
+        return inicioReserva < fim && fimReserva > inicio;
+      });
+    }
+
+    function horarioPassou(inicio) {
+      if (campoData.value !== hojeTexto()) {
+        return false;
+      }
+
+      const agora = new Date();
+      const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+
+      return inicio <= minutosAgora;
+    }
+
+    function inicioDisponivel(inicio, duracaoHoras) {
+      if (!horario.aberto || !horario.abre || !horario.fecha) {
+        return false;
+      }
+
+      const fim = inicio + duracaoHoras * 60;
+
+      if (inicio < minutos(horario.abre)) {
+        return false;
+      }
+
+      if (fim > minutos(horario.fecha)) {
+        return false;
+      }
+
+      if (horarioPassou(inicio)) {
+        return false;
+      }
+
+      if (horarioOcupado(inicio, fim)) {
+        return false;
+      }
+
+      return true;
+    }
+
+    function montarSelectInicio() {
+      const anterior = selInicio.value;
+      const duracao = Number(selDuracao.value);
+
+      selInicio.innerHTML = '';
+
+      if (!horario.aberto || !horario.abre || !horario.fecha) {
+        atualizarBotao();
+        return;
+      }
+
+      const abre = minutos(horario.abre);
+      const fecha = minutos(horario.fecha);
+
+      const primeiro = Math.ceil(abre / 60) * 60;
+
+      for (
+        let inicio = primeiro;
+        inicio + duracao * 60 <= fecha;
+        inicio += 60
+      ) {
+        if (!inicioDisponivel(inicio, duracao)) {
+          continue;
+        }
+
+        const hora = rotuloMinutos(inicio);
+        const opcao = document.createElement('option');
+
+        opcao.value = hora;
+        opcao.textContent = hora;
+
+        selInicio.appendChild(opcao);
+      }
+
+      if ([...selInicio.options].some(o => o.value === anterior)) {
+        selInicio.value = anterior;
+      }
+
+      atualizarBotao();
+    }
+
+    function desenhar() {
+      linhas.innerHTML = '';
+
+      if (!idImpressora()) {
+        textoFuncionamento.textContent = '';
+        linhas.innerHTML =
+          '<p class="dica">Nenhuma impressora selecionada.</p>';
+        atualizarBotao();
+        return;
+      }
+
+      if (carregando) {
+        textoFuncionamento.textContent = '';
+        linhas.innerHTML =
+          '<p class="dica">Carregando horários...</p>';
+        atualizarBotao();
+        return;
+      }
+
+      if (!horario.aberto) {
+        textoFuncionamento.textContent = '';
+
+        linhas.innerHTML = `
+          <div class="mensagem erro">
+            ${escapar(horario.motivo || 'A impressora não funciona nesse dia')}
+          </div>
+        `;
+
+        atualizarBotao();
+        return;
+      }
+
+      textoFuncionamento.textContent =
+        'Funcionamento nesse dia: ' +
+        horario.abre + ' às ' + horario.fecha;
+
+      const abre = minutos(horario.abre);
+      const fecha = minutos(horario.fecha);
+      const primeiro = Math.ceil(abre / 60) * 60;
+      const duracao = Number(selDuracao.value);
+
+      let html = '';
+
+      for (let inicio = primeiro; inicio < fecha; inicio += 60) {
+        const fim = Math.min(inicio + 60, fecha);
+        const hora = rotuloMinutos(inicio);
+
+        const reserva = reservasDoDia.find(r =>
+          minutos(r.horario_inicio) < fim &&
+          minutos(r.horario_fim) > inicio
+        );
+
+        const passou = horarioPassou(inicio);
+        const disponivel = inicioDisponivel(inicio, duracao);
+        const escolhido = selInicio.value === hora;
+
+        if (reserva) {
+          const primeiraHora =
+            minutos(reserva.horario_inicio) >= inicio &&
+            minutos(reserva.horario_inicio) < fim;
+
+          const participantes = reserva.participantes
+            ? `<small>com ${escapar(reserva.participantes)}</small>`
+            : '';
+
+          const cancelar = reserva.minha && primeiraHora
+            ? `<button type="button" class="apagar"
+                 data-id="${reserva.id_reserva}">Cancelar</button>`
+            : '';
+
+          html += `
+            <div class="horario ocupado ${reserva.minha ? 'minha' : ''}">
+              <span class="hora">${hora}</span>
+              <span class="info">
+                ${reserva.minha ? 'Sua reserva' : escapar(reserva.responsavel)}
+                ${participantes}
+              </span>
+              ${cancelar}
+            </div>
+          `;
+
+        } else if (passou) {
+          html += `
+            <div class="horario passou">
+              <span class="hora">${hora}</span>
+              <span class="info">Já passou</span>
+            </div>
+          `;
+
+        } else if (disponivel) {
+          html += `
+            <div class="horario livre ${escolhido ? 'escolhido' : ''}"
+                 data-hora="${hora}">
+              <span class="hora">${hora}</span>
+              <span class="info">Livre para ${duracao} horas</span>
+            </div>
+          `;
+
+        } else {
+          html += `
+            <div class="horario indisponivel">
+              <span class="hora">${hora}</span>
+              <span class="info">Indisponível para ${duracao} horas</span>
+            </div>
+          `;
+        }
+      }
+
+      linhas.innerHTML = html || '<p class="dica">Nenhum horário disponível.</p>';
+
+      atualizarBotao();
+    }
+
+    async function carregar() {
+      const versao = ++versaoConsulta;
+      const id = idImpressora();
+      const data = campoData.value;
+
+      horario = {
+        aberto: false,
+        abre: null,
+        fecha: null,
+        motivo: ''
+      };
+
+      reservasDoDia = [];
+      carregando = true;
+      montarSelectInicio();
+      desenhar();
+
+      if (!id || !data) {
+        carregando = false;
+        montarSelectInicio();
+        desenhar();
+        return;
+      }
+
+      try {
+        const parametros =
+          'id_impressora=' + encodeURIComponent(id) +
+          '&data=' + encodeURIComponent(data);
+
+        const resultado = await Promise.all([
+          chamarApi('horarios.php?' + parametros),
+          chamarApi('reservas.php?' + parametros)
+        ]);
+
+        if (versao !== versaoConsulta) {
+          return;
+        }
+
+        horario = resultado[0];
+        reservasDoDia = resultado[1];
+
+      } catch (erro) {
+        if (versao !== versaoConsulta) {
+          return;
+        }
+
+        horario = {
+          aberto: false,
+          abre: null,
+          fecha: null,
+          motivo: erro.message
+        };
+
+        reservasDoDia = [];
+      } finally {
+        if (versao === versaoConsulta) {
+          carregando = false;
+          montarSelectInicio();
+          desenhar();
+        }
+      }
+    }
+
+    campoImpressora.addEventListener('change', () => {
+      limparMensagem();
+      mostrarImpressora();
+      carregar();
+    });
+
+    campoData.addEventListener('change', () => {
+      limparMensagem();
+      carregar();
+    });
+
+    selInicio.addEventListener('change', desenhar);
+
+    selDuracao.addEventListener('change', () => {
+      montarSelectInicio();
+      desenhar();
+    });
+
+    selTipo.addEventListener('change', () => {
+      document.getElementById('bloco-participantes').style.display =
+        selTipo.value === 'em_grupo' ? 'block' : 'none';
+    });
+
+    linhas.addEventListener('click', async e => {
+      const cancelar = e.target.closest('.apagar');
+
+      if (cancelar) {
+        if (!confirm('Cancelar esta reserva?')) {
+          return;
+        }
+
+        try {
+          await chamarApi(
+            'reservas.php?id=' + encodeURIComponent(cancelar.dataset.id),
+            { method: 'DELETE' }
+          );
+
+          mostrarMensagem(msg, 'Reserva cancelada!', 'ok');
+          await carregar();
+
+        } catch (erro) {
+          mostrarMensagem(msg, erro.message);
+        }
+
+        return;
+      }
+
+      const livre = e.target.closest('.livre');
+
+      if (!livre) {
+        return;
+      }
+
+      const existe = [...selInicio.options].some(
+        o => o.value === livre.dataset.hora
+      );
+
+      if (!existe) {
+        mostrarMensagem(
+          msg,
+          'Esse horário não está disponível para a duração selecionada.'
+        );
+
+        return;
+      }
+
+      limparMensagem();
+
+      selInicio.value = livre.dataset.hora;
+      desenhar();
+    });
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      if (carregando || enviando) {
+        return;
+      }
+
+      const id = idImpressora();
+
+      if (!id) {
+        mostrarMensagem(msg, 'Selecione uma impressora.');
+        return;
+      }
+
+      const inicio = selInicio.value;
+
+      if (!inicio) {
+        mostrarMensagem(msg, 'Selecione um horário disponível.');
+        return;
+      }
+
+      const duracao = Number(selDuracao.value);
+
+      if (!inicioDisponivel(minutos(inicio), duracao)) {
+        mostrarMensagem(
+          msg,
+          'Esse horário não está disponível para a duração escolhida.'
+        );
+        return;
+      }
+
+      const nomes = document.getElementById('participantes').value
+        .split(',')
+        .map(n => n.trim())
+        .filter(n => n !== '');
+
+      const dados = {
+        id_impressora: id,
+        data_reserva: campoData.value,
+        horario_inicio: inicio,
+        duracao_horas: duracao,
+        tipo_reserva: selTipo.value,
+        participantes: selTipo.value === 'em_grupo' ? nomes : []
+      };
+
+      enviando = true;
+      atualizarBotao();
+      limparMensagem();
+
+      try {
+        const resultado = await enviarJson('reservas.php', dados, 'POST');
+
+        mostrarMensagem(
+          msg,
+          'Reserva #' + resultado.id_reserva + ' realizada com sucesso!',
+          'ok'
+        );
+
+        await carregar();
+
+      } catch (erro) {
+        mostrarMensagem(msg, erro.message);
+        await carregar();
+
+      } finally {
+        enviando = false;
+        atualizarBotao();
+      }
+    });
+
+    document.getElementById('sair').addEventListener('click', async () => {
+      await chamarApi('logout.php');
+      location.href = 'login.html';
+    });
+
+    usuarioLogado().then(async usuario => {
+      if (!usuario) {
+        location.href = 'login.html';
+        return;
+      }
+
+      document.getElementById('ola').textContent =
+        'Olá, ' + usuario.nome_usuario;
+
+      if (usuario.admin) {
+        document.getElementById('link-admin').style.display = '';
+      }
+
+      campoData.min = hojeTexto();
+      campoData.value = hojeTexto();
+
+      try {
+        await carregarImpressoras();
+        await carregar();
+
+      } catch (erro) {
+        mostrarMensagem(msg, erro.message);
+        textoFuncionamento.textContent =
+          'Não foi possível carregar as impressoras.';
+        botao.disabled = true;
+      }
+
+    }).catch(erro => {
+      mostrarMensagem(msg, erro.message);
+    });
+  </script>
+</body>
+</html>

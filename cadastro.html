@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastro - PrintHub</title>
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="centro">
+    <div class="card">
+      <h1 class="logo">Print<span>Hub</span></h1>
+      <p class="subtitulo">Crie sua conta</p>
+
+      <form id="form-cadastro">
+        <label for="email">E-mail institucional</label>
+        <input type="email" id="email" required autofocus>
+
+        <label for="nome">Nome de usuário</label>
+        <input type="text" id="nome" maxlength="50" required>
+
+        <label for="senha">Senha (mínimo 6 caracteres)</label>
+        <input type="password" id="senha" minlength="6" required>
+
+        <button type="submit" id="botao">Criar conta</button>
+        <div id="mensagem" class="mensagem"></div>
+      </form>
+
+      <p class="rodape-card">Já tem conta? <a href="login.html">Entrar</a></p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const form = document.getElementById('form-cadastro');
+    const botao = document.getElementById('botao');
+    const msg = document.getElementById('mensagem');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      botao.disabled = true;
+      msg.className = 'mensagem';
+
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value;
+
+      try {
+        await enviarJson('cadastro.php', {
+          email_institucional: email,
+          nome_usuario: document.getElementById('nome').value.trim(),
+          senha: senha,
+        });
+        await enviarJson('login.php', { email_institucional: email, senha: senha });
+        location.href = 'index.html';
+      } catch (erro) {
+        mostrarMensagem(msg, erro.message);
+        botao.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

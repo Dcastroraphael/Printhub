@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste de postagem</title>
+</head>
+<body>
+  <h3>Teste de postagem</h3>
+  <form id="f">
+    <input name="titulo" placeholder="Título" required><br><br>
+    <textarea name="texto" placeholder="Texto" required></textarea><br><br>
+    <input name="tags" placeholder="tags, separadas, por vírgula"><br><br>
+    Imagem: <input type="file" name="imagem" accept="image/*" required><br><br>
+    Arquivo 1 (opcional): <input type="file" name="arquivo1"><br><br>
+    <button>Publicar</button>
+  </form>
+  <pre id="saida"></pre>
+
+  <script>
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const r = await fetch('/printhub/api/postagens.php', {
+        method: 'POST',
+        body: new FormData(e.target)
+      });
+      document.getElementById('saida').textContent = await r.text();
+    });
+  </script>
+</body>
+</html>
