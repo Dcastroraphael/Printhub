@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar postagem - PrintHub</title>
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <h1 class="logo">Print<span>Hub</span></h1>
+    <div class="topo-direita">
+      <a class="botao botao-secundario btn-pequeno"
+         href="index.html">← Voltar</a>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    <div class="card card-largo" style="margin:0 auto">
+      <h2>Editar postagem</h2>
+
+      <p class="dica">
+        Você pode editar título, descrição e tags.
+        A imagem e os anexos serão mantidos.
+      </p>
+
+      <form id="form-editar">
+        <label for="titulo">Título</label>
+        <input id="titulo" maxlength="100" required>
+
+        <label for="texto">Descrição</label>
+        <textarea id="texto" required></textarea>
+
+        <label for="tags">Tags (separadas por vírgula)</label>
+        <input id="tags" maxlength="255">
+
+        <button id="salvar" type="submit">Salvar alterações</button>
+
+        <div id="mensagem" class="mensagem" role="status"></div>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    const id = Number(
+      new URLSearchParams(location.search).get('id')
+    );
+
+    const form = document.getElementById('form-editar');
+    const botao = document.getElementById('salvar');
+    const msg = document.getElementById('mensagem');
+
+    async function iniciar() {
+      try {
+        const usuario = await usuarioLogado();
+
+        if (!usuario) {
+          location.href = 'login.html';
+          return;
+        }
+
+        if (!Number.isSafeInteger(id) || id <= 0) {
+          throw new Error('ID de postagem inválido');
+        }
+
+        const lista = await chamarApi(
+          'postagens.php?id=' + encodeURIComponent(id)
+        );
+
+        const post = lista[0];
+
+        if (!post) {
+          throw new Error('Postagem não encontrada');
+        }
+
+        if (!post.minha) {
+          throw new Error(
+            'Somente o autor pode editar esta postagem'
+          );
+        }
+
+        document.getElementById('titulo').value = post.titulo;
+        document.getElementById('texto').value = post.texto;
+        document.getElementById('tags').value = post.tags || '';
+
+      } catch (erro) {
+        mostrarMensagem(msg, erro.message);
+        botao.disabled = true;
+      }
+    }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      botao.disabled = true;
+      botao.textContent = 'Salvando...';
+
+      try {
+        await enviarJson(
+          'postagens.php?id=' + encodeURIComponent(id),
+          {
+            titulo: document.getElementById('titulo').value,
+            texto: document.getElementById('texto').value,
+            tags: document.getElementById('tags').value
+          },
+          'PUT'
+        );
+
+        location.href = 'index.html';
+
+      } catch (erro) {
+        mostrarMensagem(msg, erro.message);
+        botao.disabled = false;
+        botao.textContent = 'Salvar alterações';
+      }
+    });
+
+    iniciar();
+  </script>
+</body>
+</html>

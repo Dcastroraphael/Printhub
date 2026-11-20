@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -10,9 +11,11 @@
   <header class="topo">
     <h1 class="logo">Print<span>Hub</span></h1>
     <div class="topo-direita">
-      <a href="conta.html" id="ola" style="color: var(--texto-suave); font-size: 0.9rem; text-decoration: none;"></a>
+      <a href="conta.html" id="ola"
+         style="color: var(--texto-suave); font-size: 0.9rem; text-decoration: none;"></a>
       <a class="botao botao-secundario btn-pequeno" href="reservas.html">Reservas</a>
-      <a class="botao botao-secundario btn-pequeno" id="link-admin" href="admin.html" style="display:none;">Administração</a>
+      <a class="botao botao-secundario btn-pequeno" id="link-admin"
+         href="admin.html" style="display:none;">Administração</a>
       <a class="botao btn-pequeno" href="nova-postagem.html">+ Nova postagem</a>
       <button class="botao-secundario btn-pequeno" id="sair">Sair</button>
     </div>
@@ -55,24 +58,42 @@
         .map((a, i) => `<a href="${escapar(a)}" download>📎 Arquivo ${i + 1}</a>`)
         .join('');
 
-      const data = new Date(p.data_publicacao.replace(' ', 'T')).toLocaleDateString('pt-BR');
+      const data = new Date(
+        p.data_publicacao.replace(' ', 'T')
+      ).toLocaleDateString('pt-BR');
+
+      const botaoEditar = p.minha
+        ? `<a class="botao botao-secundario btn-pequeno"
+              href="editar-postagem.html?id=${Number(p.id_postagem)}">Editar</a>`
+        : '';
+
       const botaoApagar = p.minha
         ? `<button class="apagar" data-id="${p.id_postagem}">Apagar</button>`
         : '';
 
       return `
         <article class="post">
-          <img src="${escapar(p.imagem)}" alt="" onerror="this.style.display='none'">
+          <img src="${escapar(p.imagem)}" alt=""
+               onerror="this.style.display='none'">
+
           <div class="post-corpo">
             <h3>${escapar(p.titulo)}</h3>
-            <span class="post-autor">por ${escapar(p.autor)} · ${data}</span>
+            <span class="post-autor">
+              por ${escapar(p.autor)} · ${data}
+            </span>
+
             <p class="post-texto">${escapar(p.texto)}</p>
+
             <div class="tags">${tags}</div>
             <div class="arquivos">${arquivos}</div>
+
             <div class="post-rodape">
-              <button class="fav ${p.favoritado ? 'ativo' : ''}" data-id="${p.id_postagem}">
+              <button class="fav ${p.favoritado ? 'ativo' : ''}"
+                      data-id="${p.id_postagem}">
                 ${p.favoritado ? '★' : '☆'} ${p.total_favoritos}
               </button>
+
+              ${botaoEditar}
               ${botaoApagar}
             </div>
           </div>
@@ -81,16 +102,27 @@
 
     async function carregar() {
       const params = new URLSearchParams();
-      if (campoBusca.value.trim() !== '') params.set('busca', campoBusca.value.trim());
-      if (soFavoritas) params.set('favoritas', '1');
+
+      if (campoBusca.value.trim() !== '') {
+        params.set('busca', campoBusca.value.trim());
+      }
+
+      if (soFavoritas) {
+        params.set('favoritas', '1');
+      }
 
       try {
-        const lista = await chamarApi('postagens.php?' + params.toString());
+        const lista = await chamarApi(
+          'postagens.php?' + params.toString()
+        );
+
         grade.innerHTML = lista.length
           ? lista.map(cartao).join('')
           : '<p class="vazio">Nenhuma postagem encontrada.</p>';
+
       } catch (erro) {
-        grade.innerHTML = '<p class="vazio">' + escapar(erro.message) + '</p>';
+        grade.innerHTML =
+          '<p class="vazio">' + escapar(erro.message) + '</p>';
       }
     }
 
@@ -101,16 +133,25 @@
 
     btnFavoritas.addEventListener('click', () => {
       soFavoritas = !soFavoritas;
-      btnFavoritas.textContent = soFavoritas ? '★ Mostrando favoritas' : '★ Só favoritas';
+
+      btnFavoritas.textContent = soFavoritas
+        ? '★ Mostrando favoritas'
+        : '★ Só favoritas';
+
       carregar();
     });
 
     grade.addEventListener('click', async (e) => {
       const apagar = e.target.closest('.apagar');
+
       if (apagar) {
         if (!confirm('Apagar esta postagem?')) return;
+
         try {
-          await chamarApi('postagens.php?id=' + apagar.dataset.id, { method: 'DELETE' });
+          await chamarApi(
+            'postagens.php?id=' + apagar.dataset.id,
+            { method: 'DELETE' }
+          );
           carregar();
         } catch (erro) {
           alert(erro.message);
@@ -122,13 +163,19 @@
       if (!botao) return;
 
       try {
-        const r = await enviarJson('favoritar.php', { id_postagem: Number(botao.dataset.id) });
+        const r = await enviarJson('favoritar.php', {
+          id_postagem: Number(botao.dataset.id)
+        });
+
         if (soFavoritas && !r.favoritado) {
           carregar();
           return;
         }
+
         botao.classList.toggle('ativo', r.favoritado);
-        botao.textContent = (r.favoritado ? '★ ' : '☆ ') + r.total_favoritos;
+        botao.textContent =
+          (r.favoritado ? '★ ' : '☆ ') + r.total_favoritos;
+
       } catch (erro) {
         alert(erro.message);
       }
@@ -140,9 +187,18 @@
     });
 
     usuarioLogado().then(u => {
-      if (!u) { location.href = 'login.html'; return; }
-      document.getElementById('ola').textContent = 'Olá, ' + u.nome_usuario;
-      if (u.admin) document.getElementById('link-admin').style.display = '';
+      if (!u) {
+        location.href = 'login.html';
+        return;
+      }
+
+      document.getElementById('ola').textContent =
+        'Olá, ' + u.nome_usuario;
+
+      if (u.admin) {
+        document.getElementById('link-admin').style.display = '';
+      }
+
       carregar();
     });
   </script>

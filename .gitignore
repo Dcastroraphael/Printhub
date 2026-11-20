@@ -6,3 +6,13 @@ vendor/
 dist/
 build/
 *.log
+
+# Credenciais e configurações locais
+/config/conexao.php
+.env
+.env.*
+
+# Arquivos locais
+.DS_Store
+Thumbs.db
+.vscode/

@@ -219,6 +219,21 @@
       ].join('-');
     }
 
+    function validarDataReserva() {
+      const data = campoData.value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return false;
+
+      const [ano, mes, dia] = data.split('-').map(Number);
+      const verificada = new Date(0);
+      verificada.setFullYear(ano, mes - 1, dia);
+      verificada.setHours(0, 0, 0, 0);
+
+      return verificada.getFullYear() === ano &&
+        verificada.getMonth() === mes - 1 &&
+        verificada.getDate() === dia &&
+        data >= hojeTexto();
+    }
+
     function minutos(hhmm) {
       const partes = String(hhmm).split(':');
 
@@ -253,7 +268,8 @@
         enviando ||
         !idImpressora() ||
         !horario.aberto ||
-        selInicio.options.length === 0;
+        selInicio.options.length === 0 ||
+        !validarDataReserva();
     }
 
     function limparMensagem() {
@@ -531,7 +547,7 @@
       montarSelectInicio();
       desenhar();
 
-      if (!id || !data) {
+      if (!id || !data || !validarDataReserva()) {
         carregando = false;
         montarSelectInicio();
         desenhar();
@@ -585,6 +601,10 @@
 
     campoData.addEventListener('change', () => {
       limparMensagem();
+      if (!validarDataReserva()) {
+        campoData.value = hojeTexto();
+        mostrarMensagem(msg, 'Data inválida! Selecione hoje ou uma data futura.');
+      }
       carregar();
     });
 
@@ -653,6 +673,11 @@
       e.preventDefault();
 
       if (carregando || enviando) {
+        return;
+      }
+
+      if (!validarDataReserva()) {
+        mostrarMensagem(msg, 'Data inválida! Selecione hoje ou uma data futura.');
         return;
       }
 

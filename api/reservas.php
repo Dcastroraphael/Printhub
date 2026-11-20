@@ -40,6 +40,12 @@ if ($metodo === 'GET') {
         resposta(['erro' => 'Data inválida'], 400);
     }
 
+    if ($data !== '' && $data < date('Y-m-d')) {
+        resposta([
+            'erro' => 'Não é possível consultar reservas de datas passadas'
+        ], 400);
+    }
+
     if (isset($_GET['id_impressora'])) {
         $idImpressora = idReservaValido($_GET['id_impressora']);
 

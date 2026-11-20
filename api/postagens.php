@@ -1,3 +1,4 @@
+
 <?php
 require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../config/conexao.php';
@@ -78,8 +79,8 @@ if ($metodo === 'GET') {
         $params[] = $termo;
     }
     if (!empty($_GET['minhas'])) {
-    if ($idUsuario === 0) {
-        resposta(['erro' => 'Você precisa estar logado'], 401);
+        if ($idUsuario === 0) {
+            resposta(['erro' => 'Você precisa estar logado'], 401);
         }
         $filtros[] = 'p.id_usuario = ?';
         $params[] = $idUsuario;
@@ -115,6 +116,8 @@ if ($metodo === 'GET') {
         $item['favoritado'] = (bool) $item['favoritado'];
         $item['minha'] = ((int) $item['id_usuario'] === $idUsuario);
     }
+    unset($item);
+
     resposta($lista);
 }
 
@@ -159,12 +162,73 @@ if ($metodo === 'POST') {
     }
 }
 
+// ========== EDITAR (SOMENTE AUTOR) ==========
+if ($metodo === 'PUT') {
+    $idUsuario = exigirLogin();
+
+    $id = filter_var(
+        $_GET['id'] ?? null,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
+
+    if (!$id) {
+        resposta(['erro' => 'Postagem inválida'], 400);
+    }
+
+    $dados = entrada();
+    $titulo = trim($dados['titulo'] ?? '');
+    $texto = trim($dados['texto'] ?? '');
+    $tags = trim($dados['tags'] ?? '');
+
+    if ($titulo === '' || mb_strlen($titulo) > 100) {
+        resposta(['erro' => 'Título obrigatório (máximo 100 caracteres)'], 400);
+    }
+    if ($texto === '') {
+        resposta(['erro' => 'Descrição obrigatória'], 400);
+    }
+    if (mb_strlen($tags) > 255) {
+        resposta(['erro' => 'Tags muito longas'], 400);
+    }
+
+    $stmt = $pdo->prepare(
+        'UPDATE postagem
+         SET titulo = ?, texto = ?, tags = ?
+         WHERE id_postagem = ? AND id_usuario = ?'
+    );
+
+    $stmt->execute([$titulo, $texto, $tags, $id, $idUsuario]);
+
+    if ($stmt->rowCount() === 0) {
+        $verificar = $pdo->prepare(
+            'SELECT id_usuario FROM postagem WHERE id_postagem = ?'
+        );
+        $verificar->execute([$id]);
+        $autor = $verificar->fetchColumn();
+
+        if ($autor === false) {
+            resposta(['erro' => 'Postagem não encontrada'], 404);
+        }
+        if ((int) $autor !== $idUsuario) {
+            resposta(['erro' => 'Somente o autor pode editar'], 403);
+        }
+    }
+
+    resposta([
+        'ok' => true,
+        'mensagem' => 'Postagem atualizada'
+    ]);
+}
+
 // ========== APAGAR ==========
 if ($metodo === 'DELETE') {
     $idUsuario = exigirLogin();
     $id = (int) ($_GET['id'] ?? 0);
 
-    $busca = $pdo->prepare('SELECT id_usuario, imagem, arquivo1, arquivo2, arquivo3 FROM postagem WHERE id_postagem = ?');
+    $busca = $pdo->prepare(
+        'SELECT id_usuario, imagem, arquivo1, arquivo2, arquivo3
+         FROM postagem WHERE id_postagem = ?'
+    );
     $busca->execute([$id]);
     $post = $busca->fetch();
 
@@ -181,11 +245,19 @@ if ($metodo === 'DELETE') {
         $pdo->prepare('DELETE FROM postagem WHERE id_postagem = ?')->execute([$id]);
         $pdo->commit();
     } catch (Exception $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         resposta(['erro' => 'Erro ao apagar', 'detalhe' => $e->getMessage()], 500);
     }
 
-    apagarArquivos([$post['imagem'], $post['arquivo1'], $post['arquivo2'], $post['arquivo3']]);
+    apagarArquivos([
+        $post['imagem'],
+        $post['arquivo1'],
+        $post['arquivo2'],
+        $post['arquivo3']
+    ]);
+
     resposta(['ok' => true]);
 }
 
